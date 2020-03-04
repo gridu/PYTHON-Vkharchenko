@@ -1,12 +1,16 @@
 import csv
 import logging
 from datetime import datetime
-from scrapy.spiders import CrawlSpider, Rule
+from scrapy.spiders import CrawlSpider
 from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s:%(levelname)s:%(message)s',)
-logging.getLogger().addHandler(logging.FileHandler('gd_blog_parser.log'))
+                    format='%(asctime)s:%(levelname)s:%(message)s', )
+
+file_handler = logging.FileHandler('gd_blog_parser.log')
+logging.getLogger().addHandler(file_handler)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
+file_handler.setFormatter(formatter)
 
 
 class GDBlogCrawler(CrawlSpider):
@@ -82,7 +86,7 @@ class GDBlogCrawler(CrawlSpider):
                 if len(text) > 160:
                     text = text[:161].replace('\r', '').replace('\n', ' ')
             publication_date_as_str = article.css('div#postcontent > div.no-mobile > '
-                                           'div.posttag.right.nomobile > span::text').get()
+                                                  'div.posttag.right.nomobile > span::text').get()
             publication_date = datetime.strptime(publication_date_as_str, '%b %d, %Y').date()
             authors = article.css('div#postcontent > div.no-mobile > '
                                   'div.postauthor.left > span > a.goauthor > span::text').getall()
@@ -123,7 +127,7 @@ class GDBlogCrawler(CrawlSpider):
         logging.info('Spider closed. '
                      '{authors_len} Authors extracted to {authors_file}, '
                      '{articles_len} Articles extracted to {articles_file}.'
-                     .format(authors_len = self.authors_len,
-                             authors_file = self.output_authors,
-                             articles_len = self.articles_len,
-                             articles_file= self.output_articles))
+                     .format(authors_len=self.authors_len,
+                             authors_file=self.output_authors,
+                             articles_len=self.articles_len,
+                             articles_file=self.output_articles))

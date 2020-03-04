@@ -1,12 +1,11 @@
 import shlex  # Lexical analysis of shell-style syntaxes
 import subprocess
 import os
-import pandas as pd
 import logging
 
+logging.getLogger().addHandler(logging.FileHandler('gd_blog_parser.log'))
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(message)s',)
-logging.getLogger().addHandler(logging.FileHandler('gd_blog_parser.log'))
 
 
 def run_command(command):
@@ -21,16 +20,22 @@ def run_command(command):
     return rc
 
 
+def generate_report():
+    pass
+
+
 if __name__ == "__main__":
     logging.info('Script started')
     logging.info('Checking if file with data already exists . . .')
     if os.path.isfile('authors.csv') and os.path.isfile('articles.csv'):  # data exists
         logging.info('Data exists. Getting most recent blog-post date . . .')
-        data_articles = pd.read_csv('articles.csv')
-        last_article_date = data_articles.sort_values('publication_date', ascending=False).head(1).iloc[0][3]
-        run_command('scrapy crawl blog_check --nolog')
+        return_code = run_command('scrapy crawl blog_check --nolog')
     else:
         logging.info('Data does not exists. Starting spider . . .')
         return_code = run_command('scrapy crawl blog_scraper --nolog')
-        print('rc=', return_code)
+
+    if return_code is 0:
+        pass
+    else:
+        logging.fatal('Script execution has been stopped because of error')
 

@@ -8,8 +8,7 @@ import pandas as pd
 from gd_blog_spider.spiders.blog_parse import GDBlogCrawler
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s:%(levelname)s:%(message)s',)
-logging.getLogger().addHandler(logging.FileHandler('gd_blog_parser.log'))
+                    format='%(asctime)s:%(levelname)s:%(message)s', )
 
 
 class BlogCheckSpider(CrawlSpider):
@@ -26,7 +25,8 @@ class BlogCheckSpider(CrawlSpider):
 
     def parse(self, response):
         data_articles = pd.read_csv('articles.csv')
-        last_article_date_csv_as_str = data_articles.sort_values('publication_date', ascending=False).head(1).iloc[0][3] # 2020-02-28
+        last_article_date_csv_as_str = data_articles.sort_values(
+            'publication_date', ascending=False).head(1).iloc[0][3]  # 2020-02-28
         last_article_date_csv = datetime.strptime(last_article_date_csv_as_str, '%Y-%m-%d').date()
         logging.info('Most recent blog-post date is {}'.format(last_article_date_csv_as_str))
         logging.info('Looking for a new blog-posts . . .')
@@ -51,8 +51,8 @@ class BlogCheckSpider(CrawlSpider):
 
     def parse_article(self, response):
         logging.info('Parsing article page [{current}/{all}] -> {url}'.format(current=self.new_article_counter,
-                                                                             all=self.new_articles_len,
-                                                                             url=response.url))
+                                                                              all=self.new_articles_len,
+                                                                              url=response.url))
         self.new_article_counter += 1
         search_results = response.css('body > div#wrap')
         for article in search_results:
@@ -87,7 +87,7 @@ class BlogCheckSpider(CrawlSpider):
                 reader = csv.reader(f)
                 authors_csv = list(reader)
 
-            with open(GDBlogCrawler.output_authors, 'w') as f:
+            with open(GDBlogCrawler.output_authors, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 looking_for = authors
                 for author in authors_csv:
@@ -99,4 +99,3 @@ class BlogCheckSpider(CrawlSpider):
                     for new_author in looking_for:
                         authors_csv.append([new_author, '', '', '', 1])
                 writer.writerows(authors_csv)
-
