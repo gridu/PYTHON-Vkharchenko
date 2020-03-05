@@ -71,7 +71,7 @@ class GDBlogCrawler(CrawlSpider):
             for article_url in author_articles:
                 yield response.follow(article_url, self.parse_article)
 
-    def parse_article(self, response):
+    def parse_article(self, response, write_to_csv=True):
         self.articles_len += 1
         logging.info('Parsing article page -> {url}'.format(url=response.url))
         search_results = response.css('body > div#wrap')
@@ -91,19 +91,21 @@ class GDBlogCrawler(CrawlSpider):
             authors = article.css('div#postcontent > div.no-mobile > '
                                   'div.postauthor.left > span > a.goauthor > span::text').getall()
             tags = response.css('ul#mainmenu > li.current > a::text').getall()
-            with open(self.output_articles, mode='a', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                if self.first_row_articles:
-                    writer.writerow(['title', 'url', 'text', 'publication_date', 'author', 'tag'])
-                    self.first_row_articles = False
-                if len(tags) > len(authors):
-                    for tag in tags:
-                        for author in authors:
-                            writer.writerow([title, url, text, publication_date, author, tag])
-                else:
-                    for author in authors:
+            if write_to_csv:
+                with open(self.output_articles, mode='a', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    if self.first_row_articles:
+                        writer.writerow(['title', 'url', 'text', 'publication_date', 'author', 'tag'])
+                        self.first_row_articles = False
+                    if len(tags) > len(authors):
                         for tag in tags:
-                            writer.writerow([title, url, text, publication_date, author, tag])
+                            for author in authors:
+                                writer.writerow([title, url, text, publication_date, author, tag])
+                    else:
+                        for author in authors:
+                            for tag in tags:
+                                writer.writerow([title, url, text, publication_date, author, tag])
+            return title, url, text, publication_date, authors, tags
 
     def parse(self, response):
         logging.info('Getting urls to authors pages -> {url}'.format(url=response.url))

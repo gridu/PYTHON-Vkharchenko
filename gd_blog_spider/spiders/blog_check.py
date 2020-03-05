@@ -23,11 +23,18 @@ class BlogCheckSpider(CrawlSpider):
     new_articles_len = 0
     new_article_counter = 1
 
-    def parse(self, response):
-        data_articles = pd.read_csv('articles.csv')
+    def get_last_publication_date_from_csv(self, csv_path=None):
+        if csv_path is None:
+            data_articles = pd.read_csv('articles.csv')
+        else:
+            data_articles = pd.read_csv(csv_path)
         last_article_date_csv_as_str = data_articles.sort_values(
             'publication_date', ascending=False).head(1).iloc[0][3]  # 2020-02-28
         last_article_date_csv = datetime.strptime(last_article_date_csv_as_str, '%Y-%m-%d').date()
+        return last_article_date_csv_as_str, last_article_date_csv
+
+    def parse(self, response):
+        last_article_date_csv_as_str, last_article_date_csv = self.get_last_publication_date_from_csv()
         logging.info('Most recent blog-post date is {}'.format(last_article_date_csv_as_str))
         logging.info('Looking for a new blog-posts . . .')
         article_info = response.css('div.cntt')
