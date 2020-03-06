@@ -78,15 +78,17 @@ class BlogCheckSpider(CrawlSpider):
             authors = article.css('div#postcontent > div.no-mobile > '
                                   'div.postauthor.left > span > a.goauthor > span::text').getall()
             tags = response.css('ul#mainmenu > li.current > a::text').getall()
-
+            author_url = article.css('div#postcontent > div.no-mobile > '
+                                  'div.postauthor.left > span > a::attr(href)').getall()
+            authors_with_urls = dict(zip(authors, author_url))
             with open(GDBlogCrawler.output_articles, mode='a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                if len(tags) > len(authors):
+                if len(tags) > len(authors_with_urls.keys()):
                     for tag in tags:
-                        for author in authors:
+                        for author in authors_with_urls.keys():
                             writer.writerow([title, url, text, publication_date, author, tag])
                 else:
-                    for author in authors:
+                    for author in authors_with_urls.keys():
                         for tag in tags:
                             writer.writerow([title, url, text, publication_date, author, tag])
 
@@ -96,13 +98,16 @@ class BlogCheckSpider(CrawlSpider):
 
             with open(GDBlogCrawler.output_authors, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                looking_for = authors
+                looking_for = list(authors_with_urls.keys())
+                author_index = 0
                 for author in authors_csv:
                     for target_author in looking_for:
                         if author[0] == target_author:
-                            looking_for.remove(target_author)
+                            del authors_with_urls[target_author]
                             author[4] = int(author[4]) + 1  # author[4] - 'articles_counter' field in csv
+                        author_index += 1
                 if len(looking_for) is not 0:  # new author is present
-                    for new_author in looking_for:
-                        authors_csv.append([new_author, '', '', '', 1])
+                    for new_author in authors_with_urls.keys():
+                        print('n_a', new_author)
+                        # authors_csv.append([new_author, '', '', '', 1])
                 writer.writerows(authors_csv)

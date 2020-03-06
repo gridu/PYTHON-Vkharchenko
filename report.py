@@ -5,6 +5,7 @@ import logging
 import pandas as pd
 from matplotlib import pyplot as plt
 
+
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(message)s', )
 
@@ -26,10 +27,11 @@ def run_command(command):
     return rc
 
 
-def get_data():
-    logging.info('Getting data for the report . . .')
-    articles = pd.read_csv('articles.csv')
-
+def get_top7_tags_plt(csv_path=None):
+    if csv_path is None:
+        articles = pd.read_csv('articles.csv')
+    else:
+        articles = csv_path
     big_data = len(articles[articles.tag == 'Big Data'].drop_duplicates('title'))
     data_science = len(articles[articles.tag == 'Data Science'].drop_duplicates('title'))
     devops = len(articles[articles.tag == 'DevOps'].drop_duplicates('title'))
@@ -40,7 +42,7 @@ def get_data():
     search = len(articles[articles.tag == 'Search'].drop_duplicates('title'))
     ui = len(articles[articles.tag == 'UI'].drop_duplicates('title'))
     tag_len_all = {'Big Data': big_data, 'Data Science': data_science, 'DevOps': devops, 'E-commerce': e_commerce,
-                   'ML & AI': ml_ai, 'Mobile': mobile, 'QA': qa, 'Search': search, 'UI': ui}
+                    'ML & AI': ml_ai, 'Mobile': mobile, 'QA': qa, 'Search': search, 'UI': ui}
     tag_len_all = {k: v for k, v in sorted(tag_len_all.items(), key=lambda item: item[1], reverse=True)}
     tag_len_top7 = dict(list(tag_len_all.items())[:7])
 
@@ -53,28 +55,44 @@ def get_data():
     plt.xlabel('Articles counter')
 
     def autolabel(rects):
-        """Attach a text label above each bar in *rects*, displaying its title."""
-        for rect, key in zip(rects, tag_len_top7.keys()):
-            height = rect.get_height()
-            plt.annotate('{}'.format(key),
-                         xy=(rect.get_x() + rect.get_width() / 2, height),
-                         xytext=(0, 3),  # 3 points vertical offset
-                         textcoords="offset points",
-                         ha='center', va='bottom')
+         """Attach a text label above each bar in *rects*, displaying its title."""
+         for rect, key in zip(rects, tag_len_top7.keys()):
+             height = rect.get_height()
+             plt.annotate('{}'.format(key),
+                          xy=(rect.get_x() + rect.get_width() / 2, height),
+                          xytext=(0, 3),  # 3 points vertical offset
+                          textcoords="offset points",
+                          ha='center', va='bottom')
 
     autolabel(rects)
     plt.tight_layout()
-    authors = pd.read_csv('authors.csv')
-    pd.set_option("display.max_colwidth", 10000)
-    top5_authors = authors.sort_values('articles_counter', ascending=False).drop_duplicates('full_name').head(5)
-    top5_authors_file = top5_authors.to_string(index=False, na_rep='')
+    return plt
 
+
+def get_top5_articles_df(csv_path=None):
+    if csv_path is None:
+        articles = pd.read_csv('articles.csv')
+    else:
+        articles = pd.read_csv(csv_path)
     top5_articles = articles.sort_values('publication_date', ascending=False).drop_duplicates('url').head(5)
-    top5_articles_file = top5_articles.to_string(index=False, na_rep='')
+    return top5_articles
+
+
+def get_top5_authors_df(csv_path=None):
+    if csv_path is None:
+        authors = pd.read_csv('authors.csv')
+    else:
+        authors = pd.read_csv(csv_path)
+    top5_authors = authors.sort_values('articles_counter', ascending=False).drop_duplicates('full_name').head(5)
+    return top5_authors
+
+
+def df_to_str(df):
+    pd.set_option("display.max_colwidth", 10000)
+    df_for_file = df.to_string(index=False, na_rep='')
     pd.set_option("display.max_colwidth", 30)
-    top5_authors_console = '\n\n' + top5_authors.to_string(index=False, na_rep='') + '\n'
-    top5_articles_console = '\n\n' + top5_articles.to_string(index=False, na_rep='') + '\n'
-    return plt, top5_articles_console, top5_authors_console, top5_articles_file, top5_authors_file
+    df_for_console = '\n\n' + df.to_string(index=False, na_rep='') + '\n'
+    return df_for_console, df_for_file
 
 
 def generate_report(plt, art_cons, auth_cons, art_file, auth_file):
@@ -109,7 +127,12 @@ if __name__ == "__main__":
         logging.info('Data does not exists. Starting spider . . .')
         return_code = run_command('scrapy crawl blog_scraper --nolog')
     if return_code is 0:
-        plt, art_cons, auth_cons, art_file, auth_file = get_data()
+        logging.info('Getting data for the report . . .')
+        plt = get_top7_tags_plt()
+        top5_articles_df = get_top5_articles_df()
+        top5_authors_df = get_top5_authors_df()
+        art_cons, art_file = df_to_str(top5_articles_df)
+        auth_cons, auth_file = df_to_str(top5_authors_df)
         generate_report(plt, art_cons, auth_cons, art_file, auth_file)
     else:
         logging.fatal('Script execution has been stopped because of error')

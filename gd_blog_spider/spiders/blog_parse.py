@@ -105,7 +105,8 @@ class GDBlogCrawler(CrawlSpider):
                         for author in authors:
                             for tag in tags:
                                 writer.writerow([title, url, text, publication_date, author, tag])
-            return title, url, text, publication_date, authors, tags
+            else:
+                return title, url, text, publication_date, authors, tags
 
     def parse(self, response):
         logging.info('Getting urls to authors pages -> {url}'.format(url=response.url))
