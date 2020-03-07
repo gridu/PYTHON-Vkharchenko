@@ -23,7 +23,6 @@ class GDBlogCrawler(CrawlSpider):
     start_urls = [
         'https://blog.griddynamics.com/all-authors/'
     ]
-    # rules = (Rule(callback='parse'),)
     output_articles = 'articles.csv'
     output_authors = 'authors.csv'
     first_row_articles = True
@@ -128,8 +127,8 @@ class GDBlogCrawler(CrawlSpider):
 
     def close(self, reason):
         logging.info('Spider closed. '
-                     '{authors_len} Authors extracted to {authors_file}, '
-                     '{articles_len} Articles extracted to {articles_file}.'
+                     '{authors_len} Author(s) extracted to {authors_file}, '
+                     '{articles_len} Article(s) extracted to {articles_file}.'
                      .format(authors_len=self.authors_len,
                              authors_file=self.output_authors,
                              articles_len=self.articles_len,

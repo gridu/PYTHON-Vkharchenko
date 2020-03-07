@@ -22,6 +22,8 @@ class BlogCheckSpider(CrawlSpider):
     blog_posts_dates = []
     new_articles_len = 0
     new_article_counter = 1
+    new_authors_len = 0
+    new_author_counter = 1
 
     def get_last_publication_date_from_csv(self, csv_path=None):
         if csv_path is None:
@@ -56,6 +58,38 @@ class BlogCheckSpider(CrawlSpider):
         for article_url in new_articles_urls:
             yield response.follow(article_url, self.parse_article)
 
+    def parse_author(self, response):
+        logging.info('Parsing author page [{current}/{all}] -> {url}'.format(current=self.new_author_counter,
+                                                                             all=self.new_authors_len,
+                                                                             url=response.url))
+        self.new_author_counter += 1
+        author_info = response.css('div#wrap > div#author > div#authorbox')
+        for field in author_info:
+            full_name = field.css('div.nomobile > div.right > h1::text').get()
+            job_title = field.css('div.nomobile > div.right > h2::text').get()
+            articles_counter = len(field.css('did.postlist > a::text').getall())
+            all_urls = field.css('div.mobile > div.right > div.authorsocial > a::attr(href)').getall()
+            linkedin = []
+            contacts = []
+            for url in all_urls:
+                if 'linkedin' in url:
+                    linkedin = url
+                else:
+                    contacts.append(url)
+            with open(GDBlogCrawler.output_authors, mode='a', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                if len(contacts) is not 0:
+                    for contact in contacts:
+                        if len(linkedin) is 0:
+                            writer.writerow([full_name, job_title, '', contact, articles_counter])
+                        else:
+                            writer.writerow([full_name, job_title, linkedin, contact, articles_counter])
+                else:
+                    if len(linkedin) is 0:
+                        writer.writerow([full_name, job_title, '', '', articles_counter])
+                    else:
+                        writer.writerow([full_name, job_title, linkedin, '', articles_counter])
+
     def parse_article(self, response):
         logging.info('Parsing article page [{current}/{all}] -> {url}'.format(current=self.new_article_counter,
                                                                               all=self.new_articles_len,
@@ -79,7 +113,7 @@ class BlogCheckSpider(CrawlSpider):
                                   'div.postauthor.left > span > a.goauthor > span::text').getall()
             tags = response.css('ul#mainmenu > li.current > a::text').getall()
             author_url = article.css('div#postcontent > div.no-mobile > '
-                                  'div.postauthor.left > span > a::attr(href)').getall()
+                                     'div.postauthor.left > span > a::attr(href)').getall()
             authors_with_urls = dict(zip(authors, author_url))
             with open(GDBlogCrawler.output_articles, mode='a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
@@ -106,8 +140,8 @@ class BlogCheckSpider(CrawlSpider):
                             del authors_with_urls[target_author]
                             author[4] = int(author[4]) + 1  # author[4] - 'articles_counter' field in csv
                         author_index += 1
-                if len(looking_for) is not 0:  # new author is present
-                    for new_author in authors_with_urls.keys():
-                        print('n_a', new_author)
-                        # authors_csv.append([new_author, '', '', '', 1])
+                if len(looking_for) is not 0:  # new author(s) is present
+                    self.new_authors_len = len(looking_for)
+                    for new_author_url in authors_with_urls.values():
+                        yield response.follow(new_author_url, self.parse_author)
                 writer.writerows(authors_csv)
