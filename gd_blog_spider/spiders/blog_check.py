@@ -14,16 +14,16 @@ logging.basicConfig(level=logging.INFO,
 class BlogCheckSpider(CrawlSpider):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
-        logging.getLogger('scrapy').propagate = False
+        logging.getLogger('scrapy').propagate = False  # disable default scrapy logger
 
     name = 'blog_check'
     allowed_domains = ['blog.griddynamics.com']
     start_urls = ['http://blog.griddynamics.com/explore/']
     blog_posts_dates = []
-    new_articles_len = 0
-    new_article_counter = 1
-    new_authors_len = 0
-    new_author_counter = 1
+    new_articles_len = 0  # for console output of parsing process, e.g. 'parsing [1/2] articles'
+    new_article_counter = 1  # same as above
+    new_authors_len = 0  # same as above
+    new_author_counter = 1  # same as above
 
     def get_last_publication_date_from_csv(self, csv_path=None):
         if csv_path is None:
@@ -31,8 +31,9 @@ class BlogCheckSpider(CrawlSpider):
         else:
             data_articles = pd.read_csv(csv_path)
         last_article_date_csv_as_str = data_articles.sort_values(
-            'publication_date', ascending=False).head(1).iloc[0][3]  # 2020-02-28
-        last_article_date_csv = datetime.strptime(last_article_date_csv_as_str, '%Y-%m-%d').date()
+            'publication_date', ascending=False).head(1).iloc[0][3]  # e.g. 2020-02-28;
+        '''iloc[m][n]: m - number of row, n - number of column'''
+        last_article_date_csv = datetime.strptime(last_article_date_csv_as_str, '%Y-%m-%d').date()  # str to datetime
         return last_article_date_csv_as_str, last_article_date_csv
 
     def parse(self, response):
@@ -42,12 +43,12 @@ class BlogCheckSpider(CrawlSpider):
         article_info = response.css('div.cntt')
         new_articles_urls = []
         for element in article_info:
-            try:
+            try:  # we are looking for d
                 date_str = element.css('div.viewauthor > div.authwrp > span::text').get()
-                current_article_date = datetime.strptime(date_str, '%b %d, %Y').date()
+                current_article_date = datetime.strptime(date_str, '%b %d, %Y').date()  # trying to convert value to datetime
                 if current_article_date > last_article_date_csv:
                     new_articles_urls.append(element.css('h4 > a::attr(href)').get())
-            except ValueError:
+            except ValueError:  # value is not convertable to datetime -> drop it
                 pass
 
         logging.info('There is {counter} blog-posts were published since {last_date}'
@@ -56,7 +57,7 @@ class BlogCheckSpider(CrawlSpider):
             self.close(self, reason='There is no new blog-posts')
         self.new_articles_len = len(new_articles_urls)
         for article_url in new_articles_urls:
-            yield response.follow(article_url, self.parse_article)
+            yield response.follow(article_url, self.parse_article)  # parsing each new article
 
     def parse_author(self, response):
         logging.info('Parsing author page [{current}/{all}] -> {url}'.format(current=self.new_author_counter,
@@ -82,6 +83,7 @@ class BlogCheckSpider(CrawlSpider):
                     for contact in contacts:
                         if len(linkedin) is 0:
                             writer.writerow([full_name, job_title, '', contact, articles_counter])
+                            # if cell is empty default value is NaN. replacing NaN with empty symbol here and below
                         else:
                             writer.writerow([full_name, job_title, linkedin, contact, articles_counter])
                 else:
@@ -104,7 +106,7 @@ class BlogCheckSpider(CrawlSpider):
             for row in text_raw_with_tags:
                 soup_raw = BeautifulSoup(row, features='lxml')
                 text += soup_raw.get_text().strip()  # getting rid of html tags
-                if len(text) > 160:
+                if len(text) > 160:  # according to task text must be truncated to 160 symbols
                     text = text[:161].replace('\r', '').replace('\n', ' ')
             publication_date_as_str = article.css('div#postcontent > div.no-mobile > '
                                                   'div.posttag.right.nomobile > span::text').get()

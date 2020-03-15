@@ -25,11 +25,11 @@ class GDBlogCrawler(CrawlSpider):
     ]
     output_articles = 'articles.csv'
     output_authors = 'authors.csv'
-    first_row_articles = True
-    first_row_authors = True
-    author_counter = 1
-    authors_len = None
-    articles_len = 0
+    first_row_articles = True  # to write column headers in csv only once
+    first_row_authors = True  # same as above
+    author_counter = 1  # for console output of parsing process, e.g. 'parsing [1/2] articles'
+    authors_len = None  # same as above
+    articles_len = 0  # same as above
 
     def parse_author(self, response):
         logging.info('Parsing author page [{current}/{all}] -> {url}'.format(current=self.author_counter,
@@ -58,6 +58,7 @@ class GDBlogCrawler(CrawlSpider):
                     for contact in contacts:
                         if len(linkedin) is 0:
                             writer.writerow([full_name, job_title, '', contact, articles_counter])
+                            # if cell is empty default value is NaN. replacing NaN with empty symbol here and below
                         else:
                             writer.writerow([full_name, job_title, linkedin, contact, articles_counter])
                 else:
@@ -68,7 +69,7 @@ class GDBlogCrawler(CrawlSpider):
 
             author_articles = response.css('div#author > div#authorbox > did.postlist > a::attr(href)').getall()
             for article_url in author_articles:
-                yield response.follow(article_url, self.parse_article)
+                yield response.follow(article_url, self.parse_article)  # parsing each article
 
     def parse_article(self, response, write_to_csv=True):
         self.articles_len += 1
@@ -119,7 +120,7 @@ class GDBlogCrawler(CrawlSpider):
             yield response.follow(author_url, self.parse_author)
         lost_authors = ('/author/ezra/',
                         '/author/anton/',
-                        '/author/pavel-vasilyev/')
+                        '/author/pavel-vasilyev/')  # these authors exists, but they are not displayed at /all-authors/ page
         for url in lost_authors:
             counter += 1
             yield response.follow(url, self.parse_author)

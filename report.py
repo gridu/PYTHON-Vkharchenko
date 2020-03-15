@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(message)s', )
 
-file_handler = logging.FileHandler('gd_blog_parser.log')
+file_handler = logging.FileHandler('gd_blog_parser.log')  # to log into file as well as to console
 logging.getLogger().addHandler(file_handler)
 formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
 file_handler.setFormatter(formatter)
@@ -70,7 +70,7 @@ def get_top7_tags_plt(csv_path=None):
 
 
 def get_top5_articles_df(csv_path=None):
-    if csv_path is None:
+    if csv_path is None:  # use default file
         articles = pd.read_csv('articles.csv')
     else:
         articles = pd.read_csv(csv_path)
@@ -79,7 +79,7 @@ def get_top5_articles_df(csv_path=None):
 
 
 def get_top5_authors_df(csv_path=None):
-    if csv_path is None:
+    if csv_path is None:  # use default file
         authors = pd.read_csv('authors.csv')
     else:
         authors = pd.read_csv(csv_path)
@@ -88,10 +88,9 @@ def get_top5_authors_df(csv_path=None):
 
 
 def df_to_str(df):
-    pd.set_option("display.max_colwidth", 10000)
-    df_for_file = df.to_string(index=False, na_rep='')
-    pd.set_option("display.max_colwidth", 30)
-    df_for_console = '\n\n' + df.to_string(index=False, na_rep='') + '\n'
+    df_for_file = df.to_string(index=False, na_rep='')  # dataframe as non-truncated string (for file)
+    df_for_console = '\n\n' + df.to_string(index=False, na_rep='', max_colwidth=20) + '\n'
+    '''dataframe as truncated string with newline characters for prettier console output'''
     return df_for_console, df_for_file
 
 
@@ -110,7 +109,7 @@ def generate_report(plt, art_cons, auth_cons, art_file, auth_file):
                  '\t\t\t\t\t\t-> top5authors.txt\n'
                  '\t\t\t\t\t\t-> top7tags.png\n')
 
-    with open('top5authors.txt', mode='w', newline='', encoding='utf-8') as f:
+    with open('top5authors.txt', mode='w', newline='', encoding='utf-8') as f:  # writing
         f.writelines(auth_file)
 
     with open('top5articles.txt', mode='w', newline='', encoding='utf-8') as f:
@@ -122,10 +121,12 @@ if __name__ == "__main__":
     logging.info('Checking if file with data already exists . . .')
     if os.path.isfile('authors.csv') and os.path.isfile('articles.csv'):  # data exists
         logging.info('Data exists. Getting most recent blog-post date . . .')
-        return_code = run_command('scrapy crawl blog_check --nolog')
+        return_code = run_command('scrapy crawl blog_check --nolog')  # check for new blog-posts and update data
+        '''blog_check spider is located in spiders/blog_check.py'''
     else:
         logging.info('Data does not exists. Starting spider . . .')
-        return_code = run_command('scrapy crawl blog_scraper --nolog')
+        return_code = run_command('scrapy crawl blog_scraper --nolog')  # scrape all info from scratch and save data
+        '''blog_scraper spider is located in spiders/blog_parse.py'''
     if return_code is 0:
         logging.info('Getting data for the report . . .')
         plt = get_top7_tags_plt()
