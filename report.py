@@ -32,31 +32,24 @@ def get_top7_tags_plt(csv_path=None):
         articles = pd.read_csv('articles.csv')
     else:
         articles = csv_path
-    big_data = len(articles[articles.tag == 'Big Data'].drop_duplicates('title'))
-    data_science = len(articles[articles.tag == 'Data Science'].drop_duplicates('title'))
-    devops = len(articles[articles.tag == 'DevOps'].drop_duplicates('title'))
-    e_commerce = len(articles[articles.tag == 'E-commerce'].drop_duplicates('url'))
-    ml_ai = len(articles[articles.tag == 'ML & AI'].drop_duplicates('title'))
-    mobile = len(articles[articles.tag == 'Mobile'].drop_duplicates('title'))
-    qa = len(articles[articles.tag == 'QA'].drop_duplicates('title'))
-    search = len(articles[articles.tag == 'Search'].drop_duplicates('title'))
-    ui = len(articles[articles.tag == 'UI'].drop_duplicates('title'))
-    tag_len_all = {'Big Data': big_data, 'Data Science': data_science, 'DevOps': devops, 'E-commerce': e_commerce,
-                    'ML & AI': ml_ai, 'Mobile': mobile, 'QA': qa, 'Search': search, 'UI': ui}
-    tag_len_all = {k: v for k, v in sorted(tag_len_all.items(), key=lambda item: item[1], reverse=True)}
-    tag_len_top7 = dict(list(tag_len_all.items())[:7])
+    tags = set(articles['tag'])  # get names of tags
+    tags_count = {}
+    for tag in tags:
+        tags_count.update({tag: len(articles[articles.tag == tag].drop_duplicates('title'))})  # key = tag name, value = counter
+    tags_count = {k: v for k, v in sorted(tags_count.items(), key=lambda item: item[1], reverse=True)}  # sort tags by counter, descending
+    tags_count_top7 = dict(list(tags_count.items())[:7])  # get 7 most popular tags
 
     x = range(7)
     plt.figure(figsize=(9, 5))
-    rects = plt.bar(x, tag_len_top7.values())
-    plt.xticks(x, tag_len_top7.values(), rotation='horizontal')
+    rects = plt.bar(x, tags_count_top7.values())
+    plt.xticks(x, tags_count_top7.values(), rotation='horizontal')
     plt.yticks([], [])
     plt.title('Tags')
     plt.xlabel('Articles counter')
 
     def autolabel(rects):
          """Attach a text label above each bar in *rects*, displaying its title."""
-         for rect, key in zip(rects, tag_len_top7.keys()):
+         for rect, key in zip(rects, tags_count_top7.keys()):
              height = rect.get_height()
              plt.annotate('{}'.format(key),
                           xy=(rect.get_x() + rect.get_width() / 2, height),
