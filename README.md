@@ -13,3 +13,5 @@ Main task is to obtain information and generate a report with:
 ### Run unittests
 * [Setup and configure parser](https://github.com/gridu/PYTHON-Vkharchenko#setup-and-configure-crawler)
 * Run ```python3 unittests.py```
+
+###### Screenshot with unittests results can be found [here](unittests_files/unittests_screenshot.png)
