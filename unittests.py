@@ -7,9 +7,11 @@ from report import get_top5_articles_df
 
 
 class SpiderTest(unittest.TestCase):
+    """Unittests for GDBlogCrawler and BlogCheckSpider"""
 
     def test_parse_article(self):
-        """to emulate response from url with offline htm file we must pass all code of the page to response object"""
+        """Test GDBlogCrawler.parse_article"""
+        # to emulate response from url with offline htm file we must pass all code of the page to response object
         with open(r'unittests_files/article_sample.htm') as f:
             body = f.read()  # reading htm file to get all html+css code
         response = HtmlResponse(
@@ -25,11 +27,13 @@ class SpiderTest(unittest.TestCase):
         self.assertEqual(crawler.parse_article(response, write_to_csv=False), expected)
 
     def test_get_last_publication_date(self):
+        """Test BlogCheckSpider.get_last_publication_date_from_csv"""
         spider = BlogCheckSpider()
         self.assertEqual(spider.get_last_publication_date_from_csv(csv_path='unittests_files/articles_sample.csv'),
                          ('2020-03-03', datetime.date(2020, 3, 3)))  # function returns values as str and as datetime
 
     def test_get_top5_articles_df(self):
+        """Test report.get_top5_articles_df"""
         df = get_top5_articles_df(csv_path='unittests_files/articles_sample.csv')
         expected = ['2020-03-03', '2020-02-28', '2020-02-22', '2020-02-18', '2020-02-11']
         self.assertEqual(df.publication_date.tolist(),

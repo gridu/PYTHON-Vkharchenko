@@ -14,6 +14,7 @@ file_handler.setFormatter(formatter)
 
 
 class GDBlogCrawler(CrawlSpider):
+    """This spider is used when no data exists"""
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         logging.getLogger('scrapy').setLevel(logging.WARNING)
@@ -32,6 +33,7 @@ class GDBlogCrawler(CrawlSpider):
     articles_len = 0  # same as above
 
     def parse_author(self, response):
+        """Function to parse each author and extract data to .csv file"""
         logging.info('Parsing author page [{current}/{all}] -> {url}'.format(current=self.author_counter,
                                                                              all=self.authors_len,
                                                                              url=response.url))
@@ -72,6 +74,7 @@ class GDBlogCrawler(CrawlSpider):
                 yield response.follow(article_url, self.parse_article)  # parsing each article
 
     def parse_article(self, response, write_to_csv=True):
+        """Function to parse each article and extract data to .csv file"""
         self.articles_len += 1
         logging.info('Parsing article page -> {url}'.format(url=response.url))
         search_results = response.css('body > div#wrap')
@@ -109,6 +112,7 @@ class GDBlogCrawler(CrawlSpider):
                 return title, url, text, publication_date, authors, tags
 
     def parse(self, response):
+        """Function to parse /all-authors/ page and get url to each author page"""
         logging.info('Getting urls to authors pages -> {url}'.format(url=response.url))
         authors_list = response.css('div#wrap > div.blog.list.authorslist > div.inner > '
                                     'div.row > div.left > div.single')
@@ -120,13 +124,15 @@ class GDBlogCrawler(CrawlSpider):
             yield response.follow(author_url, self.parse_author)
         lost_authors = ('/author/ezra/',
                         '/author/anton/',
-                        '/author/pavel-vasilyev/')  # these authors exists, but they are not displayed at /all-authors/ page
+                        '/author/pavel-vasilyev/')
+        # these authors exists, but they are not displayed at /all-authors/ page
         for url in lost_authors:
             counter += 1
             yield response.follow(url, self.parse_author)
         self.authors_len = counter
 
     def close(self, reason):
+        """Function to explicitly close spider"""
         logging.info('Spider closed. '
                      '{authors_len} Author(s) extracted to {authors_file}, '
                      '{articles_len} Article(s) extracted to {articles_file}.'

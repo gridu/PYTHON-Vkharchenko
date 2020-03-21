@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO,
 
 
 class BlogCheckSpider(CrawlSpider):
+    """This spider is used when some data already exists"""
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         logging.getLogger('scrapy').propagate = False  # disable default scrapy logger
@@ -26,6 +27,7 @@ class BlogCheckSpider(CrawlSpider):
     new_author_counter = 1  # same as above
 
     def get_last_publication_date_from_csv(self, csv_path=None):
+        """Function to get last publication date from provided csv file"""
         if csv_path is None:
             data_articles = pd.read_csv('articles.csv')
         else:
@@ -37,15 +39,17 @@ class BlogCheckSpider(CrawlSpider):
         return last_article_date_csv_as_str, last_article_date_csv
 
     def parse(self, response):
+        """Function to get new blog-posts"""
         last_article_date_csv_as_str, last_article_date_csv = self.get_last_publication_date_from_csv()
         logging.info('Most recent blog-post date is {}'.format(last_article_date_csv_as_str))
         logging.info('Looking for a new blog-posts . . .')
         article_info = response.css('div.cntt')
         new_articles_urls = []
         for element in article_info:
-            try:  # we are looking for d
+            try:  # we are looking for date
                 date_str = element.css('div.viewauthor > div.authwrp > span::text').get()
-                current_article_date = datetime.strptime(date_str, '%b %d, %Y').date()  # trying to convert value to datetime
+                current_article_date = \
+                    datetime.strptime(date_str, '%b %d, %Y').date()  # trying to convert value to datetime
                 if current_article_date > last_article_date_csv:
                     new_articles_urls.append(element.css('h4 > a::attr(href)').get())
             except ValueError:  # value is not convertable to datetime -> drop it
@@ -60,6 +64,7 @@ class BlogCheckSpider(CrawlSpider):
             yield response.follow(article_url, self.parse_article)  # parsing each new article
 
     def parse_author(self, response):
+        """Function to parse new author page and extract data to .csv file"""
         logging.info('Parsing author page [{current}/{all}] -> {url}'.format(current=self.new_author_counter,
                                                                              all=self.new_authors_len,
                                                                              url=response.url))
@@ -93,6 +98,7 @@ class BlogCheckSpider(CrawlSpider):
                         writer.writerow([full_name, job_title, linkedin, '', articles_counter])
 
     def parse_article(self, response):
+        """Function to parse new article page and extract data to .csv file"""
         logging.info('Parsing article page [{current}/{all}] -> {url}'.format(current=self.new_article_counter,
                                                                               all=self.new_articles_len,
                                                                               url=response.url))
