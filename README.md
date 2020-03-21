@@ -11,5 +11,5 @@ Main task is to obtain information and generate a report with:
 ### Start crawler and get report
 * Run ```python3 report.py```
 ### Run unittests
-* [Setup and configure parser](https://github.com/gridu/PYTHON-Vkharchenko#setup-and-configure-parser)
+* [Setup and configure parser](https://github.com/gridu/PYTHON-Vkharchenko#setup-and-configure-crawler)
 * Run ```python3 unittests.py```
